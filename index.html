@@ -1,0 +1,578 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Multiple Option Component (Single File)</title>
+  <style>
+    :root{
+      --bg:#0f1724;
+      --card:#0b1220;
+      --muted:#9aa4b2;
+      --accent:#6ee7b7;
+      --danger:#ff7b7b;
+      --glass: rgba(255,255,255,0.03);
+      --radius:14px;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: linear-gradient(180deg,#071028 0%, #071727 60%);
+      color:#e6eef6;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:32px;
+      -webkit-font-smoothing:antialiased;
+    }
+
+    .container{
+      width:100%;
+      max-width:920px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border-radius:18px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.6);
+      padding:28px;
+      gap:18px;
+      display:flex;
+      flex-direction:column;
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      margin-bottom:6px;
+    }
+    header h1{
+      margin:0;
+      font-size:20px;
+      letter-spacing:0.2px;
+    }
+    .meta{color:var(--muted); font-size:13px;}
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.015));
+      border-radius:var(--radius);
+      padding:18px;
+      border:1px solid rgba(255,255,255,0.03);
+    }
+
+    .question{
+      display:flex;
+      gap:16px;
+      align-items:flex-start;
+    }
+    .q-number{
+      min-width:36px;
+      height:36px;
+      background:var(--glass);
+      border-radius:10px;
+      display:grid;
+      place-items:center;
+      color:var(--accent);
+      font-weight:700;
+    }
+    .q-body{
+      flex:1;
+    }
+    .q-title{
+      font-weight:600;
+      margin:0 0 10px 0;
+      color:#dff7ea;
+    }
+    .q-desc{color:var(--muted); font-size:13px; margin:0 0 12px 0}
+
+    .options{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .option{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      padding:12px 14px;
+      border-radius:12px;
+      background: rgba(255,255,255,0.01);
+      border:1px solid rgba(255,255,255,0.02);
+      cursor:pointer;
+      transition:all .12s ease;
+      user-select:none;
+    }
+    .option[aria-checked="true"]{
+      background: linear-gradient(90deg, rgba(110,231,183,0.08), rgba(110,231,183,0.02));
+      border-color: rgba(110,231,183,0.18);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(8,13,20,0.45);
+    }
+    .option:focus{
+      outline: 3px solid rgba(110,231,183,0.12);
+    }
+    .option .label{
+      font-weight:600;
+      min-width:26px;
+      text-align:center;
+    }
+    .option .text{
+      flex:1;
+      color:#e6eef6;
+    }
+    .option .hint{
+      color:var(--muted);
+      font-size:13px;
+      margin-left:8px;
+    }
+
+    .controls{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      margin-top:16px;
+      align-items:center;
+    }
+    .btn{
+      appearance:none;
+      border:0;
+      cursor:pointer;
+      font-weight:600;
+      padding:10px 14px;
+      border-radius:10px;
+      background:linear-gradient(90deg,var(--accent), #38bdf8);
+      color:#022;
+      box-shadow: 0 6px 18px rgba(18,54,43,0.28);
+    }
+    .btn.ghost{
+      background:transparent;
+      color:var(--muted);
+      border:1px solid rgba(255,255,255,0.03);
+      box-shadow:none;
+    }
+    .score{
+      font-weight:700;
+      color:var(--accent);
+    }
+
+    .feedback{
+      margin-top:12px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      color:var(--muted);
+      font-size:14px;
+    }
+
+    .correct{ color:var(--accent); font-weight:700 }
+    .wrong{ color:var(--danger); font-weight:700 }
+
+    footer{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-top:12px;
+    }
+
+    @media (max-width:640px){
+      .container{ padding:18px }
+      .q-number{ display:none }
+      .btn{ padding:10px 12px }
+    }
+  </style>
+</head>
+<body>
+  <div class="container" role="application" aria-labelledby="title">
+    <header>
+      <div>
+        <h1 id="title">Multiple Option Quiz</h1>
+        <div class="meta">Single-file demo • Accessible • Keyboard friendly</div>
+      </div>
+      <div class="meta">Questions: <span id="total">0</span></div>
+    </header>
+
+    <div id="quiz" class="card" aria-live="polite">
+      <!-- JS will render questions here -->
+    </div>
+
+    <footer>
+      <div class="meta">Progress: <span id="progress">0 / 0</span></div>
+      <div>
+        <button id="prevBtn" class="btn ghost" type="button">Previous</button>
+        <button id="nextBtn" class="btn" type="button">Next</button>
+        <button id="submitBtn" class="btn" type="button" style="display:none">Submit</button>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+    /*************************************************************************
+     * QUESTIONS
+     * - type: "single" or "multiple"
+     * - options: array of { id, text }
+     * - answer: for single -> id, for multiple -> array of ids
+     *************************************************************************/
+    const questions = [
+      {
+        id: 'q1',
+        type: 'single',
+        title: 'Which language runs in the browser?',
+        desc: 'Choose the best single option.',
+        options: [
+          { id: 'a', text: 'Python' },
+          { id: 'b', text: 'C#' },
+          { id: 'c', text: 'JavaScript' },
+          { id: 'd', text: 'Go' }
+        ],
+        answer: 'c'
+      },
+      {
+        id: 'q2',
+        type: 'multiple',
+        title: 'Select the frontend libraries/frameworks',
+        desc: 'Multiple options allowed.',
+        options: [
+          { id: 'a', text: 'React' },
+          { id: 'b', text: 'Express' },
+          { id: 'c', text: 'Vue' },
+          { id: 'd', text: 'Django' }
+        ],
+        answer: ['a','c']
+      },
+      {
+        id: 'q3',
+        type: 'single',
+        title: 'What does CSS stand for?',
+        desc: '',
+        options: [
+          { id: 'a', text: 'Cascading Style Sheets' },
+          { id: 'b', text: 'Computer Style Syntax' },
+          { id: 'c', text: 'Creative Styling System' },
+          { id: 'd', text: 'Colorful Style Sets' }
+        ],
+        answer: 'a'
+      }
+    ];
+
+    // State
+    let currentIndex = 0;
+    const userAnswers = {}; // key: questionId -> value: string or Set
+
+    // Elements
+    const quizEl = document.getElementById('quiz');
+    const totalEl = document.getElementById('total');
+    const progressEl = document.getElementById('progress');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const submitBtn = document.getElementById('submitBtn');
+
+    totalEl.textContent = questions.length;
+    updateProgress();
+
+    // Render current question
+    function renderQuestion() {
+      const q = questions[currentIndex];
+      quizEl.innerHTML = '';
+      const qWrap = document.createElement('div');
+      qWrap.className = 'question';
+
+      const num = document.createElement('div');
+      num.className = 'q-number';
+      num.textContent = (currentIndex + 1);
+
+      const body = document.createElement('div');
+      body.className = 'q-body';
+
+      const title = document.createElement('h3');
+      title.className = 'q-title';
+      title.textContent = q.title;
+
+      const desc = document.createElement('div');
+      desc.className = 'q-desc';
+      desc.textContent = q.desc || '';
+
+      // options container
+      const options = document.createElement('div');
+      options.className = 'options';
+      options.setAttribute('role','listbox');
+      // aria-multiselectable for multiple
+      if (q.type === 'multiple') {
+        options.setAttribute('aria-multiselectable','true');
+      } else {
+        options.setAttribute('aria-multiselectable','false');
+      }
+
+      // prepare recorded answer
+      if (!userAnswers[q.id]) {
+        userAnswers[q.id] = q.type === 'multiple' ? new Set() : null;
+      }
+
+      q.options.forEach(opt => {
+        const item = document.createElement('div');
+        item.className = 'option';
+        item.tabIndex = 0;
+        item.setAttribute('role', q.type === 'multiple' ? 'option' : 'option');
+        item.dataset.optId = opt.id;
+        item.dataset.qId = q.id;
+
+        // aria-checked state
+        const checked = isOptionSelected(q.id, opt.id);
+        item.setAttribute('aria-checked', checked ? 'true' : 'false');
+
+        // label and text
+        const label = document.createElement('div');
+        label.className = 'label';
+        label.textContent = opt.id.toUpperCase();
+
+        const text = document.createElement('div');
+        text.className = 'text';
+        text.textContent = opt.text;
+
+        item.appendChild(label);
+        item.appendChild(text);
+
+        // click handler
+        item.addEventListener('click', () => { toggleOption(q, opt.id, item); });
+        // keyboard handler
+        item.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            toggleOption(q, opt.id, item);
+          }
+        });
+
+        options.appendChild(item);
+      });
+
+      // feedback area
+      const feedback = document.createElement('div');
+      feedback.className = 'feedback';
+      feedback.id = 'feedback';
+
+      body.appendChild(title);
+      body.appendChild(desc);
+      body.appendChild(options);
+      body.appendChild(feedback);
+
+      qWrap.appendChild(num);
+      qWrap.appendChild(body);
+
+      quizEl.appendChild(qWrap);
+
+      // Controls visibility
+      prevBtn.style.display = currentIndex === 0 ? 'none' : 'inline-block';
+      nextBtn.style.display = currentIndex === questions.length - 1 ? 'none' : 'inline-block';
+      submitBtn.style.display = currentIndex === questions.length - 1 ? 'inline-block' : 'none';
+
+      updateProgress();
+      // Announce current question
+      quizEl.setAttribute('aria-label', `Question ${currentIndex+1}: ${q.title}`);
+    }
+
+    function isOptionSelected(qId, optId){
+      const val = userAnswers[qId];
+      if (val === null) return false;
+      if (val instanceof Set) return val.has(optId);
+      return val === optId;
+    }
+
+    function toggleOption(q, optId, el){
+      if (q.type === 'single') {
+        // set the single answer
+        userAnswers[q.id] = optId;
+        // update DOM states for options in this question
+        const opts = quizEl.querySelectorAll(`.option[data-q-id="${q.id}"]`);
+        opts.forEach(o => {
+          const id = o.dataset.optId;
+          const checked = id === optId;
+          o.setAttribute('aria-checked', checked ? 'true' : 'false');
+        });
+      } else {
+        // multiple - toggle in Set
+        const set = userAnswers[q.id];
+        if (set.has(optId)) set.delete(optId);
+        else set.add(optId);
+        el.setAttribute('aria-checked', set.has(optId) ? 'true' : 'false');
+      }
+      // Optionally show immediate feedback for single-choice if user wants
+      showImmediateFeedback(q);
+    }
+
+    function showImmediateFeedback(q) {
+      const fb = document.getElementById('feedback');
+      if (!fb) return;
+      // For single-choice, give immediate correctness; for multiple, show chosen count
+      if (q.type === 'single') {
+        const chosen = userAnswers[q.id];
+        if (!chosen) {
+          fb.innerHTML = '';
+          return;
+        }
+        if (chosen === q.answer) {
+          fb.innerHTML = '<div class="correct">Correct ✓</div>';
+        } else {
+          const correctText = q.options.find(o => o.id === q.answer)?.text || '—';
+          fb.innerHTML = '<div class="wrong">Wrong ✕</div><div style="margin-left:8px; color:var(--muted)">Correct: ' + correctText + '</div>';
+        }
+      } else {
+        const set = userAnswers[q.id];
+        fb.innerHTML = `<div style="color:var(--muted)">Selected ${set.size} option(s)</div>`;
+      }
+    }
+
+    function calculateScore() {
+      let score = 0;
+      questions.forEach(q => {
+        const your = userAnswers[q.id];
+        if (q.type === 'single') {
+          if (your === q.answer) score += 1;
+        } else {
+          // multiple: score if sets are equal
+          const correctSet = new Set(q.answer);
+          if (your instanceof Set) {
+            if (your.size === correctSet.size) {
+              let same = true;
+              correctSet.forEach(x => { if (!your.has(x)) same = false; });
+              if (same) score += 1;
+            }
+          }
+        }
+      });
+      return score;
+    }
+
+    function showResults() {
+      const score = calculateScore();
+      const total = questions.length;
+      quizEl.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'card';
+      const heading = document.createElement('h2');
+      heading.textContent = `You scored ${score} / ${total}`;
+      heading.style.margin = '0 0 8px 0';
+      heading.className = 'q-title';
+
+      const details = document.createElement('div');
+      details.className = 'meta';
+      details.textContent = 'Review answers below:';
+
+      const list = document.createElement('div');
+      list.style.marginTop = '12px';
+      list.style.display = 'grid';
+      list.style.gap = '12px';
+
+      questions.forEach((q, idx) => {
+        const qcard = document.createElement('div');
+        qcard.className = 'card';
+        const title = document.createElement('div');
+        title.style.fontWeight = 700;
+        title.textContent = `${idx+1}. ${q.title}`;
+
+        const ansWrap = document.createElement('div');
+        ansWrap.style.marginTop = '8px';
+        q.options.forEach(o => {
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.alignItems = 'center';
+          row.style.gap = '10px';
+
+          const mark = document.createElement('div');
+          mark.style.minWidth = '26px';
+          mark.style.textAlign = 'center';
+          mark.style.fontWeight = 700;
+          // correct?
+          const isCorrect = (q.type === 'single') ? (o.id === q.answer) : (q.answer.includes(o.id));
+          const isSelected = (q.type === 'single') ? (userAnswers[q.id] === o.id) : (userAnswers[q.id] && userAnswers[q.id].has(o.id));
+
+          mark.textContent = o.id.toUpperCase();
+          mark.style.color = isCorrect ? 'var(--accent)' : (isSelected ? 'var(--danger)' : 'var(--muted)');
+
+          const text = document.createElement('div');
+          text.textContent = o.text;
+          text.style.flex = '1';
+
+          // add tags
+          const tag = document.createElement('div');
+          tag.style.fontSize = '13px';
+          tag.style.color = 'var(--muted)';
+          if (isCorrect && isSelected) tag.textContent = '✔ Correct';
+          else if (isCorrect) tag.textContent = '✔ Answer';
+          else if (isSelected) tag.textContent = '✕ Your choice';
+          else tag.textContent = '';
+
+          row.appendChild(mark);
+          row.appendChild(text);
+          row.appendChild(tag);
+          ansWrap.appendChild(row);
+        });
+
+        qcard.appendChild(title);
+        qcard.appendChild(ansWrap);
+        list.appendChild(qcard);
+      });
+
+      wrap.appendChild(heading);
+      wrap.appendChild(details);
+      wrap.appendChild(list);
+
+      // Restart button
+      const restart = document.createElement('div');
+      restart.style.marginTop = '12px';
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = 'Restart Quiz';
+      btn.addEventListener('click', () => { resetQuiz(); });
+      restart.appendChild(btn);
+
+      quizEl.appendChild(wrap);
+      quizEl.appendChild(restart);
+    }
+
+    function resetQuiz() {
+      // clear answers
+      questions.forEach(q => {
+        userAnswers[q.id] = q.type === 'multiple' ? new Set() : null;
+      });
+      currentIndex = 0;
+      renderQuestion();
+    }
+
+    function updateProgress(){
+      progressEl.textContent = `${currentIndex + 1} / ${questions.length}`;
+    }
+
+    // navigation
+    prevBtn.addEventListener('click', () => {
+      if (currentIndex > 0) currentIndex--;
+      renderQuestion();
+    });
+    nextBtn.addEventListener('click', () => {
+      if (currentIndex < questions.length - 1) currentIndex++;
+      renderQuestion();
+    });
+    submitBtn.addEventListener('click', () => {
+      showResults();
+    });
+
+    // initialize userAnswers
+    questions.forEach(q => {
+      userAnswers[q.id] = q.type === 'multiple' ? new Set() : null;
+    });
+
+    // first render
+    renderQuestion();
+
+    // Optional: allow arrow keys to navigate
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') prevBtn.click();
+      if (e.key === 'ArrowRight') nextBtn.click();
+    });
+
+    // Expose for debug (remove in production)
+    window._quiz = { questions, userAnswers };
+  </script>
+</body>
+</html>
